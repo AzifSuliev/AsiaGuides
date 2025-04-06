@@ -1,0 +1,28 @@
+﻿@model List<Country>
+
+<div class="d-flex justify-content-end mb-3">
+    <a asp-controller="Country" asp-action="Create" class="btn btn-secondary w-40">Add country</a>
+</div>
+
+<div class="row">
+    @foreach (Country country in Model)
+    {
+        <div class="col-12 col-sm-6 col-md-4 col-lg-4">
+            <div class="card" style="width: 18rem; height: 300px">
+                <img src="@country.ImageUrl" class="card-img-top" alt="..."
+                style="object-fit: cover; height: 150px">
+                <div class="card-body">
+                    <h5 class="card-title">@country.Name</h5>
+
+                    <div class="d-flex justify-content-end mb-3">
+                        <a asp-controller="Country" asp-action="Details" asp-route-id="@country.Id"
+                           class="btn btn-primary me-2" style="width: 100px; height: 40px;">Details</a>
+                        <a asp-controller="Country" asp-action="Edit" asp-route-id="@country.Id"
+                           class="btn btn-warning" style="width: 100px; height: 40px;">Edit</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
