@@ -27,6 +27,7 @@ namespace AsiaGuides.Controllers
             return View(countriesFromDb);
         }
 
+        [HttpGet]
         public async Task<IActionResult> Details(int? id)
         {
             if (!id.HasValue) return NotFound(); // Проверка на null
@@ -67,13 +68,14 @@ namespace AsiaGuides.Controllers
 
             await _dbContext.Countries.AddAsync(country);
             await _dbContext.SaveChangesAsync();
-
+            TempData["success"] = "The country has been created successfully";
             return RedirectToAction(nameof(Index), "Country");
         }
 
         [HttpGet]
-        public async Task<IActionResult> Edit(int id)
-        {           
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (!id.HasValue) return NotFound();
             Country countryFromDb = await _dbContext.Countries.FindAsync(id); // Используем id.Value
             if (countryFromDb == null) return NotFound(); // Если country не найдено
             return View(countryFromDb);
@@ -126,9 +128,36 @@ namespace AsiaGuides.Controllers
             // Обновляем информацию о стране в базе данных
             _dbContext.Countries.Update(country);
             await _dbContext.SaveChangesAsync();
-
+            TempData["success"] = "The country has been edited successfully";
             return RedirectToAction(nameof(Index), "Country"); // Перенаправляем на страницу списка стран
         }
 
+
+        [HttpGet]
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (!id.HasValue) return NotFound();
+            Country countryToBeDeleted = await _dbContext.Countries.FindAsync(id);
+            if (countryToBeDeleted == null) return NotFound();
+            return View(countryToBeDeleted);
+        }
+
+        [HttpPost, ActionName("Delete")]
+        public async Task<IActionResult> DeletPost(int id)
+        {
+            Country countryToBeDeleted = await _dbContext.Countries.FindAsync(id);
+            if (countryToBeDeleted == null) return NotFound();
+
+            if(!string.IsNullOrEmpty(countryToBeDeleted.ImageUrl))
+            {
+                var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, countryToBeDeleted.ImageUrl.TrimStart('\\'));
+                if (System.IO.File.Exists(oldImagePath)) System.IO.File.Delete(oldImagePath);
+            }
+
+            _dbContext.Countries.Remove(countryToBeDeleted);
+            await _dbContext.SaveChangesAsync();
+            TempData["success"] = "The country has been deleted successfully";
+            return RedirectToAction(nameof(Index), "Country");
+        }
     }
 }

@@ -1,27 +1,28 @@
-﻿@model List<Country>
+﻿@model List<City>
+
 <partial name="_Notification" />
 <div class="d-flex justify-content-end mb-3">
-    <a asp-controller="Country" asp-action="Create" class="btn btn-secondary w-40">Add country</a>
+    <a asp-controller="City" asp-action="Create" class="btn btn-secondary w-40">Add city</a>
 </div>
 
 <div class="row">
-    @foreach (Country country in Model)
+    @foreach (City city in Model)
     {
         <div class="col-12 col-sm-6 col-md-4 col-lg-4">
             <div class="card" style="width: 20rem; height: 350px; background-color:blanchedalmond; border-radius: 15px">
-                <img src="@country.ImageUrl" class="card-img-top" alt="@country.Name"
+                <img src="@city.ImageUrl" class="card-img-top" alt="@city.Name"
                      style="object-fit: cover; height: 150px">
                 <div class="card-body">
-                    <h5 class="card-title">@country.Name</h5>
+                    <h5 class="card-title">@city.Name</h5>
 
                     <div class="d-flex justify-content-end mb-3 ms-3" style="width: 215px">
-                        <a asp-controller="Country" asp-action="Details" asp-route-id="@country.Id"
+                        <a asp-controller="City" asp-action="Details" asp-route-id="@city.Id"
                            class="btn btn-primary me-2 w-100" style="height: 40px;">Details</a>
                     </div>
                     <div class="d-flex justify-content-start ms-3">
-                        <a asp-controller="Country" asp-action="Edit" asp-route-id="@country.Id"
+                        <a asp-controller="City" asp-action="Edit" asp-route-id="@city.Id"
                            class="btn btn-warning me-2" style="width: 100px; height: 40px;">Edit</a>
-                        <a asp-controller="Country" asp-action="Delete" asp-route-id="@country.Id"
+                        <a asp-controller="City" asp-action="Delete" asp-route-id="@city.Id"
                            class="btn btn-danger" style="width: 100px; height: 40px;">Delete</a>
                     </div>
                 </div>
@@ -29,4 +30,3 @@
         </div>
     }
 </div>
-
