@@ -13,9 +13,8 @@ namespace AsiaGuides.Models
         [MaxLength(100)]
         public string Description { get; set; }
         public string? ImageUrl { get; set; }
-        [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "Please select a country")]
+        [Required(ErrorMessage = "You must select a country")]
         public int CountryId { get; set; }
-        public Country Country { get; set; }
+        public Country? Country { get; set; }
     }
 }

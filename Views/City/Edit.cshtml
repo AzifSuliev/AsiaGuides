@@ -18,6 +18,13 @@
             <span asp-validation-for="Description" class="text-danger"></span>
         </div>
         <div class="mb-3 row p-1">
+            <label asp-for="CountryId" class="p-0" style="color:black"></label>
+            <select asp-for="CountryId" asp-items="ViewBag.CountryList" class="form-select">
+                <option value="">-- Select Country --</option>
+            </select>
+            <span asp-validation-for="CountryId" class="text-danger"></span>
+        </div>
+        <div class="mb-3 row p-1">
             <input type="file" name="file" class="form-control border-0 shadow" />
         </div>
         <div class="=row pt-3">

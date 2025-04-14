@@ -1,0 +1,13 @@
+﻿@model List<City>
+
+@foreach (var city in Model)
+{
+    <li>
+        <a class="dropdown-item text-black text-decoration-none"
+           asp-controller="City"
+           asp-action="Details"
+           asp-route-id="@city.Id">
+            @city.Name
+        </a>
+    </li>
+}

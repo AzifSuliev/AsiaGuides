@@ -30,8 +30,8 @@ namespace AsiaGuides.Controllers
         [HttpGet]
         public async Task<IActionResult> Details(int? id)
         {
-            if (!id.HasValue) return NotFound(); // Проверка на null
-            Country countryFromDb = await _dbContext.Countries.FindAsync(id.Value); // Используем id.Value
+            if (id == null || id == 0) return NotFound(); // Проверка на null
+            Country? countryFromDb = await _dbContext.Countries.Include(c => c.Cities).FirstOrDefaultAsync(c => c.Id == id); // Используем id.Value
             if (countryFromDb == null) return NotFound(); // Если country не найдено
             return View(countryFromDb);
         }
