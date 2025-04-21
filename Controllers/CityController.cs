@@ -12,10 +12,10 @@ namespace AsiaGuides.Controllers
     {
         private  ApplicationDbContext _dbContext;
         private readonly IWebHostEnvironment _webHostEnvironment;
-        public CityController(ApplicationDbContext _dbContext, IWebHostEnvironment _web_webHostEnvironment)
+        public CityController(ApplicationDbContext _dbContext, IWebHostEnvironment _webHostEnvironment)
         {
             this._dbContext = _dbContext;
-            this._webHostEnvironment = _web_webHostEnvironment;
+            this._webHostEnvironment = _webHostEnvironment;
         }
 
         public async Task<IActionResult> Index()
@@ -30,10 +30,10 @@ namespace AsiaGuides.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int id)
         {
-            if (!id.HasValue) return NotFound();
-            City cityFromDb = await _dbContext.Cities.FindAsync(id.Value);
+            if (id == null || id == 0) return NotFound();
+            City cityFromDb = await _dbContext.Cities.Include(c => c.Attractions).ThenInclude(a => a.Images).FirstOrDefaultAsync(c => c.Id == id);
             if (cityFromDb == null) return NotFound();
             return View(cityFromDb);
         }

@@ -1,0 +1,48 @@
+﻿@model Attraction
+
+<form method="post" enctype="multipart/form-data">
+    <div class="border p-3 mt-4">
+        <div class="row pb-2">
+            <h2 style="color:black">Add attraction</h2>
+            <hr style="color:black" />
+        </div>
+        <div asp-validation-summary="All"></div>
+        <div class="mb-3 row p-1">
+            <label style="color:black" asp-for="Name" class="p-0"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="mb-3 row p-1">
+            <label style="color:black" asp-for="Description" class="p-0"></label>
+            <input asp-for="Description" class="form-control" />
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+        <div class="mb-3 row p-1">
+            <label style="color:black" asp-for="OpeningHours" class="p-0"></label>
+            <input asp-for="OpeningHours" class="form-control" />
+            <span asp-validation-for="OpeningHours" class="text-danger"></span>
+        </div>
+        <div class="mb-3 row p-1">
+            <label asp-for="CityId" class="p-0" style="color:black"></label>
+            <select asp-for="CityId" asp-items="ViewBag.CityList" class="form-select">
+                <option value="">-- Select City --</option>
+            </select>
+            <span asp-validation-for="CityId" class="text-danger"></span>
+        </div>
+        <div class="mb-3 row p-1">
+            <input type="file" name="files" class="form-control border-0 shadow" multiple/>
+        </div>
+        <div class="=row pt-3">
+            <div class="col-6">
+                <button type="submit" class="btn btn-primary form-control" style="width:100px;height:40px">Add</button>
+                <a asp-area="" asp-controller="Attraction" asp-action="Index" class="btn btn-secondary" style="width:100px;height:40px">Back</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+        <partial name="_ValidationScriptsPartial" />
+    }
+}

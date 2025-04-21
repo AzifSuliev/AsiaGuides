@@ -13,7 +13,7 @@ namespace AsiaGuides.Models
         [MaxLength(300)]
         public string Description { get; set; }
         public int CityId { get; set; }  // Внешний ключ для связи с City
-        public City City { get; set; }  // Связь с моделью City
+        public City? City { get; set; }  // Связь с моделью City
         public List<AttractionImage> Images { get; set; } = new(); // коллекция фото достопримечательности 
         public double Rating { get; set; }
         public string OpeningHours { get; set; }

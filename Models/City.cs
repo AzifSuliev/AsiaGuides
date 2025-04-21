@@ -16,5 +16,6 @@ namespace AsiaGuides.Models
         [Required(ErrorMessage = "You must select a country")]
         public int CountryId { get; set; }
         public Country? Country { get; set; }
+        public List<Attraction> Attractions { get; set; } = new();
     }
 }

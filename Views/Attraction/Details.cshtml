@@ -1,0 +1,18 @@
+﻿@model Attraction
+
+<div class="container mt-4">
+    <h1 class="mb-3">@Model.Name</h1>
+    <p class="lead">@Model.Description</p>
+    <p><strong>Opening hours:</strong> @Model.OpeningHours</p>
+
+    <div class="row mt-4">
+        @foreach (var file in Model.Images)
+        {
+            <div class="col-6 col-sm-4 col-md-3 mb-4">
+                <div class="card shadow-sm">
+                    <img src="@file.ImageUrl" alt="@Model.Name" class="card-img-top rounded" style="height: 180px; object-fit: cover;">
+                </div>
+            </div>
+        }
+    </div>
+</div>
