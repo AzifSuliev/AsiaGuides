@@ -41,43 +41,58 @@ namespace AsiaGuides.Controllers
         [HttpGet]
         public async Task<IActionResult> Create()
         {
+            // Загружаем список стран из базы данных и передаём его во ViewBag для отображения в выпадающем списке
             ViewBag.CountryList = new SelectList(await _dbContext.Countries.ToListAsync(), "Id", "Name");
+            // Отображение формы создания сущности
             return View();
         }
 
         [HttpPost]
         public async Task<IActionResult> Create(City city, IFormFile file)
         {
+            // Если модель некорректна, возвращаем пользователя на форму с ошибками
             if (!ModelState.IsValid)
             {
+                // Повторно загружаем список стран для формы
                 ViewBag.CountryList = new SelectList(await _dbContext.Countries.ToListAsync(), "Id", "Name");
+                // Возвращаем обратно форму с введёнными данными
                 return View(city);
             }
+
+            // Получаем путь к папке wwwroot
             string wwwRootPath = _webHostEnvironment.WebRootPath;
 
+            // Если пользователь загрузил файл изображения
             if (file != null && file.Length > 0)
             {
+                // Генерируем уникальное имя файла с сохранением расширения
                 string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                // Путь к папке "images"
                 string cityPath = Path.Combine(wwwRootPath, "images");
+                // Сохраняем файл на диск
                 using (var fileStream = new FileStream(Path.Combine(cityPath, fileName), FileMode.Create))
                 {
                     await file.CopyToAsync(fileStream);
                 }
+                // Указываем путь к изображению в свойство города
                 city.ImageUrl = "/images/" + fileName;
             }
+            // Если файл не загружен — используем изображение по умолчанию
             else city.ImageUrl = "/images/empty.png";
-
-            await _dbContext.Cities.AddAsync(city);  // Добавляем новый город в базу данных
-
-            // Загружаем страну, к которой относится город
+            // Добавляем новый город в базу данных
+            await _dbContext.Cities.AddAsync(city);
+            // Загружаем страну по выбранному идентификатору, включая список её городов
             var country = await _dbContext.Countries.
                 Include(c => c.Cities).
                 FirstOrDefaultAsync(c => c.Id == city.CountryId);
 
-            // Добавляем новый город в коллекцию Cities страны
+            // Если страна найдена — добавляем город в коллекцию Cities этой страны
             country?.Cities.Add(city); // Если country != null, то добавить city в Cities
+            // Сохраняем данные в базе данных
             await _dbContext.SaveChangesAsync();
+            // Устанавливаем сообщение об успехе
             TempData["success"] = "The city has been created successfully";
+            // Перенаправляем пользователя на представление Index контроллера CityController
             return RedirectToAction(nameof(Index), "City");
         }
 
@@ -87,6 +102,7 @@ namespace AsiaGuides.Controllers
             if (!id.HasValue) return NotFound();
             City cityFromDb = await _dbContext.Cities.FindAsync(id.Value);
             if (cityFromDb == null) return NotFound();
+            // Список стран для выбора
             ViewBag.CountryList = new SelectList(await _dbContext.Countries.ToListAsync(), "Id", "Name");
             return View(cityFromDb);
         }
@@ -143,7 +159,7 @@ namespace AsiaGuides.Controllers
             City cityToBeDeleted = await _dbContext.Cities.FindAsync(id.Value);
             if (cityToBeDeleted == null) return NotFound();
 
-            if (string.IsNullOrEmpty(cityToBeDeleted.ImageUrl))
+            if (!string.IsNullOrEmpty(cityToBeDeleted.ImageUrl))
             {
                 var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, cityToBeDeleted.ImageUrl.TrimStart('\\'));
                 if (System.IO.File.Exists(oldImagePath)) System.IO.File.Delete(oldImagePath);
