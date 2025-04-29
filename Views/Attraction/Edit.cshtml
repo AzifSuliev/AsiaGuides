@@ -1,6 +1,7 @@
 ﻿@model Attraction
 
 <form method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
     <div class="border p-3 mt-4">
         <div class="row pb-2">
             <h2 style="color:black">Edit attraction</h2>
@@ -29,6 +30,19 @@
             </select>
             <span asp-validation-for="CityId" class="text-danger"></span>
         </div>
+        <div id="image-list">
+            @foreach (var image in Model.Images)
+            {
+                <div id="image-@image.Id" style="display: inline-block; position: relative; margin: 10px;">
+                    <img src="@image.ImageUrl" width="100" height="100" style="object-fit: cover;" />
+                    <button type="button" onclick="DeleteImage(@Model.Id, @image.Id)"
+                            style="position: absolute; top: 0; right: 0; background: red; color: white; border: none;">
+                        ✖
+                    </button>
+                </div>
+            }
+        </div>
+
         <div class="mb-3 row p-1">
             <input type="file" name="files" class="form-control border-0 shadow" multiple />
         </div>
@@ -42,7 +56,40 @@
 </form>
 
 @section Scripts {
-    @{
-        <partial name="_ValidationScriptsPartial" />
-    }
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        function DeleteImage(attractionId, imageId) {
+            if (!confirm('Are you sure you want to delete this image?')) {
+                return;
+            }
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            const formData = new FormData();
+            formData.append('attractionId', attractionId);
+            formData.append('imageId', imageId);
+
+            fetch('/Attraction/DeleteImage', {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': token
+                },
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Удаляем div, в котором находилась картинка и кнопка
+                    const imageDiv = document.getElementById('image-' + imageId);
+                    if (imageDiv) {
+                        imageDiv.remove();
+                    }
+                } else {
+                    alert('Failed to delete the image.');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
 }
+

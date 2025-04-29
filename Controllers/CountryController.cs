@@ -10,11 +10,12 @@ namespace AsiaGuides.Controllers
     {
         private ApplicationDbContext _dbContext;
         private readonly IWebHostEnvironment _webHostEnvironment;
-
-        public CountryController(ApplicationDbContext dbContext, IWebHostEnvironment webHostEnvironment)
+        private readonly ILogger<CountryController> _logger;
+        public CountryController(ApplicationDbContext dbContext, IWebHostEnvironment webHostEnvironment, ILogger<CountryController> logger)
         {
             _dbContext = dbContext;
             _webHostEnvironment = webHostEnvironment;
+            _logger = logger;
         }
         public async Task<IActionResult> Index()
         {
@@ -158,6 +159,37 @@ namespace AsiaGuides.Controllers
             await _dbContext.SaveChangesAsync();
             TempData["success"] = "The country has been deleted successfully";
             return RedirectToAction(nameof(Index), "Country");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteImage(int countryId)
+        {
+            Country country = await _dbContext.Countries.FindAsync(countryId);
+            if(country == null) return NotFound();
+            string imageUrl = country.ImageUrl;
+            if (string.IsNullOrEmpty(imageUrl)) return NotFound();
+            // Удаляем физический файл
+            var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, imageUrl.TrimStart('\\'));
+            try
+            {
+                if (System.IO.File.Exists(oldImagePath))
+                {
+                    System.IO.File.Delete(oldImagePath);
+                }
+                else
+                {
+                    _logger.LogWarning($"The file {oldImagePath} does not exist.", oldImagePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"Error: {ex.Message}");
+            }
+            _dbContext.Countries.Update(country);
+            country.ImageUrl = null;
+            await _dbContext.SaveChangesAsync();
+
+            return StatusCode(StatusCodes.Status200OK);
         }
     }
 }

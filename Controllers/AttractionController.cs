@@ -98,7 +98,7 @@ namespace AsiaGuides.Controllers
         public async Task<IActionResult> Edit(int? id)
         {
             if (!id.HasValue) return NotFound();
-            Attraction attractionFromDb = await _dbContext.Attractions.FirstOrDefaultAsync(a => a.Id == id.Value);
+            Attraction attractionFromDb = await _dbContext.Attractions.Include(a => a.Images).FirstOrDefaultAsync(a => a.Id == id.Value);
             if (attractionFromDb == null) return NotFound();
             // Список городов для выбора
             ViewBag.CityList = new SelectList(await _dbContext.Cities.ToListAsync(), "Id", "Name");
@@ -193,6 +193,24 @@ namespace AsiaGuides.Controllers
             await _dbContext.SaveChangesAsync();
             TempData["success"] = "The attraction has been deleted successfully";
             return RedirectToAction(nameof(Index), "Attraction");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteImage(int attractionId, int imageId)
+        {
+            var attraction = await _dbContext.Attractions.Include(a => a.Images).FirstOrDefaultAsync(a => a.Id == attractionId);
+            if (attraction == null) return NotFound();
+            var image = attraction.Images.FirstOrDefault(i => i.Id == imageId);
+            if (image == null) return NotFound();
+            // Удаляем физический файл
+            var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, image.ImageUrl.TrimStart('\\'));
+            if (System.IO.File.Exists(oldImagePath))
+            {
+                System.IO.File.Delete(oldImagePath);
+            }
+            attraction.Images.Remove(image);
+            await _dbContext.SaveChangesAsync();
+            return StatusCode(StatusCodes.Status200OK);
         }
     }
 }

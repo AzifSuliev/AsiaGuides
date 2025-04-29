@@ -5,17 +5,20 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.Metrics;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace AsiaGuides.Controllers
 {
     public class CityController : Controller
     {
-        private  ApplicationDbContext _dbContext;
+        private ApplicationDbContext _dbContext;
         private readonly IWebHostEnvironment _webHostEnvironment;
-        public CityController(ApplicationDbContext _dbContext, IWebHostEnvironment _webHostEnvironment)
+        private readonly ILogger<CityController> _logger;
+        public CityController(ApplicationDbContext _dbContext, IWebHostEnvironment _webHostEnvironment, ILogger<CityController> _logger)
         {
             this._dbContext = _dbContext;
             this._webHostEnvironment = _webHostEnvironment;
+            this._logger = _logger;
         }
 
         public async Task<IActionResult> Index()
@@ -115,7 +118,12 @@ namespace AsiaGuides.Controllers
                 ViewBag.CountryList = new SelectList(await _dbContext.Countries.ToListAsync(), "Id", "Name");
                 return View(city);
             }
-
+            var cityFromDb = await _dbContext.Cities.FindAsync(city.Id);
+            if (cityFromDb == null) return NotFound();
+            // Обновляем нужные поля
+            cityFromDb.Name = city.Name;
+            cityFromDb.Description = city.Description;
+            cityFromDb.CountryId = city.CountryId;
             string wwwRootPath = _webHostEnvironment.WebRootPath;
             if (file != null && file.Length > 0)
             {
@@ -125,19 +133,18 @@ namespace AsiaGuides.Controllers
                 {
                     await file.CopyToAsync(fileStream);
                 }
-                city.ImageUrl = "/images/" + fileName;
+                // При загрузке нового файла можно удалить старый файл  
+                if (!string.IsNullOrEmpty(cityFromDb.ImageUrl) && cityFromDb.ImageUrl != "/images/empty.png")
+                {
+                    string oldImagePath = Path.Combine(wwwRootPath, cityFromDb.ImageUrl.TrimStart('/'));
+                    if (System.IO.File.Exists(oldImagePath))
+                    {
+                        System.IO.File.Delete(oldImagePath);
+                    }
+                }
+                cityFromDb.ImageUrl = "/images/" + fileName;
             }
-            else if(string.IsNullOrEmpty(city.ImageUrl)) city.ImageUrl = "/images/empty.png";
-
-            var cityFromDb = await _dbContext.Cities.FindAsync(city.Id);
-            if (cityFromDb == null) return NotFound();
-            var trackedCity = _dbContext.Cities.Local.FirstOrDefault(c => c.Id == city.Id);
-            if (trackedCity != null)
-            {
-                _dbContext.Entry(trackedCity).State = EntityState.Detached;  // Отключаем отслеживание старой сущности
-            }
-
-            _dbContext.Cities.Update(city);
+            else if (string.IsNullOrEmpty(cityFromDb.ImageUrl)) cityFromDb.ImageUrl = "/images/empty.png";            
             await _dbContext.SaveChangesAsync();
             TempData["success"] = "The city has been edited successfully";
             return RedirectToAction(nameof(Index), "City");
@@ -170,5 +177,36 @@ namespace AsiaGuides.Controllers
             TempData["success"] = "The city has been deleted successfully";
             return RedirectToAction(nameof(Index), "City");
         }
+        [HttpPost]
+        public async Task<IActionResult> DeleteImage(int? cityId)
+        {
+            City city = await _dbContext.Cities.FindAsync(cityId);
+            if (city == null) return NotFound();
+            string imageUrl = city.ImageUrl;
+            if (string.IsNullOrEmpty(imageUrl)) return NotFound();
+            // Удаляем физический файл
+            var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, imageUrl.TrimStart('\\'));
+            try
+            {
+                if (System.IO.File.Exists(oldImagePath))
+                {
+                    System.IO.File.Delete(oldImagePath);
+                }
+                else
+                {
+                    _logger.LogWarning($"The file {oldImagePath} does not exist.", oldImagePath);
+                }
+            }
+            catch(Exception ex)
+            {
+                _logger.LogWarning($"Error: {ex.Message}");
+            }
+            // Обнуляем ссылку на фото в БД
+            _dbContext.Cities.Update(city);
+            city.ImageUrl = null;
+            await _dbContext.SaveChangesAsync();
+            return StatusCode(StatusCodes.Status200OK);
+        }
     }
 }
+
