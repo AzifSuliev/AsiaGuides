@@ -10,6 +10,7 @@ namespace AsiaGuides.Data
         public DbSet<Country> Countries { get; set; }
         public DbSet<City> Cities { get; set; }
         public DbSet<Attraction> Attractions { get; set; }
+        public DbSet<AttractionImage> AttractionImage { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
