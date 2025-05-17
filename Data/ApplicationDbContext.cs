@@ -1,9 +1,10 @@
 ﻿using AsiaGuides.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace AsiaGuides.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
@@ -11,6 +12,7 @@ namespace AsiaGuides.Data
         public DbSet<City> Cities { get; set; }
         public DbSet<Attraction> Attractions { get; set; }
         public DbSet<AttractionImage> AttractionImage { get; set; }
+        public DbSet<ApplicationUser> ApplicationUsers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

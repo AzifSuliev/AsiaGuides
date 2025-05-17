@@ -1,0 +1,88 @@
+﻿@model City
+
+<form method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <div class="border p-3 mt-4">
+        <div class="row pb-2">
+            <h2 style="color:black">Edit city</h2>
+            <hr style="color:black" />
+        </div>
+        <div asp-validation-summary="All"></div>
+        <div class="mb-3 row p-1">
+            <label style="color:black" asp-for="Name" class="p-0"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="mb-3 row p-1">
+            <label style="color:black" asp-for="Description" class="p-0"></label>
+            <input asp-for="Description" class="form-control" />
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+        <div class="mb-3 row p-1">
+            <label asp-for="CountryId" class="p-0" style="color:black"></label>
+            <select asp-for="CountryId" asp-items="ViewBag.CountryList" class="form-select">
+                <option value="">-- Select Country --</option>
+            </select>
+            <span asp-validation-for="CountryId" class="text-danger"></span>
+        </div>
+        <div class="mb-3 row p-1">
+            <input type="file" name="file" class="form-control border-0 shadow" />
+        </div>
+        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+        {
+            <div id="image-@Model.Id">
+                <div style="display: inline-block; position: relative; margin: 10px;">
+                    <img src="@Model.ImageUrl" width="100" height="100" style="object-fit: cover;" />
+                    <button type="button" onclick="DeleteImage(@Model.Id)"
+                            style="position: absolute; top: 0; right: 0; background: red; color: white; border: none;">
+                        ✖
+                    </button>
+                </div>
+            </div>
+        }
+
+        <div class="row pt-3">
+            <div class="col-6">
+                <button type="submit" class="btn btn-primary form-control" style="width:100px;height:40px">Edit</button>
+                <a asp-area="Admin" asp-controller="City" asp-action="Index" class="btn btn-secondary" style="width:100px;height:40px">Back</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        function DeleteImage(cityId) {
+            if (!confirm('Are you sure you want to delete this image?')) {
+                return;
+            }
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            const formData = new FormData();
+            formData.append('cityId', cityId);
+
+            fetch('/City/DeleteImage', {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': token
+                },
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Удаляем div, в котором находилась картинка и кнопка
+                    const imageDiv = document.getElementById('image-' + cityId);
+                    if (imageDiv) {
+                        imageDiv.remove();
+                    }
+                } else {
+                    alert('Failed to delete the image.');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+}

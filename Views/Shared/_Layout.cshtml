@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -26,7 +27,7 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">AsiaGuides</a>
+                <a class="navbar-brand" asp-area="User" asp-controller="UserHome" asp-action="Index">AsiaGuides</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -39,12 +40,26 @@
                                         data-bs-auto-close="outside">
                                     Countries
                                 </button>
-                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                    @await Component.InvokeAsync("CountryList") <!-- Вставка компонента для списка стран -->
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Country" asp-action="Index">See all countries</a>
-                                    </li>
-                                </ul>
+                                @if (User.IsInRole(StaticDetails.Role_Admin))
+                                {
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                        @await Component.InvokeAsync("AdminCountryList") <!-- Вставка компонента для списка стран -->
+                                        <li>
+                                            <a class="dropdown-item" asp-area="Admin" asp-controller="Country" asp-action="Index">See all countries</a>
+                                        </li>
+                                    </ul>
+                                }
+                                else if (User.IsInRole(StaticDetails.Role_User) || !User.Identity.IsAuthenticated)
+                                {
+
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                        @await Component.InvokeAsync("UserCountryList") <!-- Вставка компонента для списка стран -->
+                                        <li>
+                                            <a class="dropdown-item" asp-area="User" asp-controller="UserHome" asp-action="Index">See all countries</a>
+                                        </li>
+                                    </ul>
+
+                                }
                             </div>
                         </li>
                         <li class="nav-item">
@@ -53,12 +68,24 @@
                                         data-bs-auto-close="outside">
                                     Cities
                                 </button>
-                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                    @await Component.InvokeAsync("CityList") <!-- Вставка компонента для списка городов -->
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="City" asp-action="Index">See all cities</a>
-                                    </li>
-                                </ul>
+                                @if (User.IsInRole(StaticDetails.Role_Admin))
+                                {
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                        @await Component.InvokeAsync("AdminCityList") <!-- Вставка компонента для списка городов -->
+                                        <li>
+                                            <a class="dropdown-item" asp-area="Admin" asp-controller="City" asp-action="Index">See all cities</a>
+                                        </li>
+                                    </ul>
+                                }
+                                else if (User.IsInRole(StaticDetails.Role_User) || !User.Identity.IsAuthenticated)
+                                {
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                        @await Component.InvokeAsync("UserCityList") <!-- Вставка компонента для списка городов -->
+                                        <li>
+                                            <a class="dropdown-item" asp-area="User" asp-controller="UserHome" asp-action="GetCities">See all cities</a>
+                                        </li>
+                                    </ul>
+                                }
                             </div>
                         </li>
                         <li class="nav-item">
@@ -67,24 +94,41 @@
                                         data-bs-auto-close="outside">
                                     Attractions
                                 </button>
-                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                    @await Component.InvokeAsync("AttractionList") <!-- Вставка компонента для списка городов -->
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Attraction" asp-action="Index">See all attractions</a>
-                                    </li>
-                                </ul>
+
+                                @if (User.IsInRole(StaticDetails.Role_Admin))
+                                {
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                        @await Component.InvokeAsync("AdminAttractionList") <!-- Вставка компонента для списка достопримечательностей -->
+                                        <li>
+                                            <a class="dropdown-item" asp-area="Admin" asp-controller="Attraction" asp-action="Index">See all attractions</a>
+                                        </li>
+                                    </ul>
+                                }
+                                else if (User.IsInRole(StaticDetails.Role_User) || !User.Identity.IsAuthenticated)
+                                {
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                        @await Component.InvokeAsync("UserAttractionList") <!-- Вставка компонента для списка достопримечательностей -->
+                                        <li>
+                                            <a class="dropdown-item" asp-area="User" asp-controller="UserHome" asp-action="GetAttractions">See all attractions</a>
+                                        </li>
+                                    </ul>
+                                }
+
                             </div>
                         </li>
+                        @if (User.IsInRole(StaticDetails.Role_Admin))
+                        {
+                            <li class="nav-item">
+                                <form asp-area="" asp-controller="Maintenance" asp-action="CleanUnusedImages" method="post">
+                                    <button type="submit" class="btn btn-danger">Clean unused images</button>
+                                </form>
+                            </li>
+                        }
                         <li class="nav-item">
-                            <form asp-area="" asp-controller="Maintenance" asp-action="CleanUnusedImages" method="post">
-                                <button type="submit" class="btn btn-danger">Clean unused images</button>
-                            </form>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-area="User" asp-controller="UserHome" asp-action="Privacy">Privacy</a>
                         </li>
                     </ul>
+                    <partial name="_LoginPartial" />
                 </div>
             </div>
         </nav>

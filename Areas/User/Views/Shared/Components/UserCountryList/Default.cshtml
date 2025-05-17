@@ -1,0 +1,13 @@
+﻿@model List<Country>
+
+@foreach (var country in Model)
+{
+    <li>
+        <a class="dropdown-item text-black text-decoration-none"
+           asp-controller="UserHome"
+           asp-action="CountryDetails"
+           asp-route-id="@country.Id">
+            @country.Name
+        </a>
+    </li>
+}

@@ -1,0 +1,26 @@
+﻿@model Country
+
+<form method="post">
+    @* <input asp-for="@Model.Id" hidden /> *@
+    <div class="border p-3 mt-4">
+        <div class="row pb-2">
+            <h2 style="color:black">Delete country</h2>
+            <hr style="color:black" />
+        </div>
+        @* <div asp-validation-summary="All"></div> *@
+        <div class="mb-3 row p-1">
+            <label style="color:black" asp-for="Name" class="p-0"></label>
+            <input asp-for="Name" disabled class="form-control" />
+        </div>
+        <div class="mb-3 row p-1">
+            <label style="color:black" asp-for="Description" class="p-0"></label>
+            <input asp-for="Description" disabled class="form-control" />
+        </div>
+        <div class="=row pt-3">
+            <div class="col-6">
+                <button type="submit" class="btn btn-primary form-control" style="width:100px;height:40px">Delete</button>
+                <a asp-area="Admin" asp-controller="Country" asp-action="Index" class="btn btn-secondary" style="width:100px;height:40px">Back</a>
+            </div>
+        </div>
+    </div>
+</form>

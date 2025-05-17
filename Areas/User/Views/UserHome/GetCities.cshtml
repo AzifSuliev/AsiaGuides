@@ -1,0 +1,30 @@
+﻿@model List<City>
+
+<div class="row">
+    @foreach (City city in Model)
+    {
+        <div class="col-12 col-sm-6 col-md-4 col-lg-4">
+            <div class="card" style="width: 20rem; height: 350px; background-color:blanchedalmond; border-radius: 15px">
+                @if (string.IsNullOrEmpty(city.ImageUrl))
+                {
+                    var imageUrl = "/images/empty.png";
+                    <img src="@imageUrl" class="card-img-top" alt="@city.Name"
+                         style="object-fit: cover; height: 150px">
+                }
+                else
+                {
+                    <img src="@city.ImageUrl" class="card-img-top" alt="@city.Name"
+                         style="object-fit: cover; height: 150px">
+                }
+                <div class="card-body">
+                    <h5 class="card-title">@city.Name</h5>
+
+                    <div class="d-flex justify-content-end mt-3 mb-3 ms-3" style="width: 215px">
+                        <a asp-area="User" asp-controller="UserHome" asp-action="CityyDetails" asp-route-id="@city.Id"
+                           class="btn btn-primary me-2 w-100" style="height: 40px;">Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
