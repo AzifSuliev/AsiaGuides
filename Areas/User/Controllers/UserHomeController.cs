@@ -25,6 +25,10 @@ namespace AsiaGuides.Areas.User.Controllers
         public async Task<IActionResult> Index()
         {
             IEnumerable<Country> countries = await _dbContext.Countries.ToListAsync();
+            if (User.IsInRole(StaticDetails.Role_Admin))
+            {
+                return RedirectToAction("Index", "Country", new { area = "Admin"});
+            }
             return View(countries);
         }
 

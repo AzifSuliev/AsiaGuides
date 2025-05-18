@@ -67,10 +67,11 @@
             const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
             const formData = new FormData();
+            formData.append('__RequestVerificationToken', token);
             formData.append('attractionId', attractionId);
             formData.append('imageId', imageId);
 
-            fetch('/Attraction/DeleteImage', {
+            fetch('/Admin/Attraction/DeleteImage', {
                 method: 'POST',
                 headers: {
                     'RequestVerificationToken': token
