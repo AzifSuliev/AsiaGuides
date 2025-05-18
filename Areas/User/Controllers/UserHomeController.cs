@@ -68,5 +68,10 @@ namespace AsiaGuides.Areas.User.Controllers
             if (attraction == null) return NotFound();
             return View(attraction);
         }
+
+        public IActionResult AboutUs()
+        {
+            return View();
+        }
     }
 }

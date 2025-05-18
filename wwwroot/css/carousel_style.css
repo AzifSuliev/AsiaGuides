@@ -1,0 +1,5 @@
+﻿.carousel-item img {
+    height: 400px; /* фиксированная высота */
+    object-fit: cover; /* обрезает и масштабирует */
+    width: 100%;
+}
