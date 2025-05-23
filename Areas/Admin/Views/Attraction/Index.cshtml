@@ -9,12 +9,12 @@
     @foreach (Attraction attraction in Model)
     {
         <div class="col-12 col-sm-6 col-md-4 col-lg-4">
-            <div class="card" style="width: 20rem; height: 350px; background-color:blanchedalmond; border-radius: 15px">
+            <div class="card m-4" style="width: 20rem; height: 350px; background-color:blanchedalmond; border-radius: 15px">
                 @{
                     var imageUrl = attraction.Images?.FirstOrDefault()?.ImageUrl ?? "/images/empty.png";
                 }
                 <img src="@imageUrl" class="card-img-top" alt="@attraction.Name"
-                     style="object-fit: cover; height: 150px">
+                     style="object-fit: cover; height: 150px;">
 
                 <div class="card-body">
                     <h5 class="card-title">@attraction.Name</h5>
