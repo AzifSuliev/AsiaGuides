@@ -12,7 +12,7 @@ namespace AsiaGuides.Data
         public DbSet<City> Cities { get; set; }
         public DbSet<Attraction> Attractions { get; set; }
         public DbSet<AttractionImage> AttractionImage { get; set; }
-        public DbSet<ApplicationUser> ApplicationUsers { get; set; }
+        //public DbSet<ApplicationUser> ApplicationUsers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
