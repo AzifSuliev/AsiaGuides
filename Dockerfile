@@ -6,8 +6,8 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Копируем файл проекта и восстанавливаем зависимости
-COPY AsiaGuides/AsiaGuides.csproj AsiaGuides/
-RUN dotnet restore AsiaGuides/AsiaGuides.csproj
+COPY AsiaGuides.csproj AsiaGuides/
+RUN dotnet restore AsiaGuides.csproj
 
 # Копируем остальные файлы и публикуем
 COPY . .
