@@ -41,13 +41,15 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorPages();
+app.MapGet("/", () => "Hello from AsiaGuides!");
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{area=User}/{controller=UserHome}/{action=Index}/{id?}");
