@@ -53,9 +53,9 @@ app.MapRazorPages();
 //app.MapGet("/", () => "Hello from AsiaGuides!");
 
 app.MapControllerRoute(
-    name: "root",
-    pattern: "/",
-    defaults: new { area = "User", controller = "UserHome", action = "Index" });
+    name: "areas",
+    pattern: "{area:exists}/{controller=UserHome}/{action=Index}/{id?}");
+
 
 
 app.Run();
