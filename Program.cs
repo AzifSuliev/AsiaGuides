@@ -48,7 +48,8 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorPages();
-// app.MapGet("/", () => "Hello from AsiaGuides!");
+// Для проверки
+app.MapGet("/", () => "Hello from AsiaGuides!");
 
 app.MapControllerRoute(
     name: "default",
