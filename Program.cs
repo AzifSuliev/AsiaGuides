@@ -50,7 +50,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorPages();
 // Для проверки
-app.MapGet("/", () => "Hello from AsiaGuides!");
+//app.MapGet("/", () => "Hello from AsiaGuides!");
 
 app.MapControllerRoute(
     name: "root",
