@@ -8,7 +8,7 @@ using AsiaGuides.Models;
 
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls("http://0.0.0.0:10000");
+// builder.WebHost.UseUrls("http://0.0.0.0:10000");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -49,10 +49,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapRazorPages();
 // Для проверки
-app.MapGet("/", () => "Hello from AsiaGuides!");
+// app.MapGet("/", () => "Hello from AsiaGuides!");
 
 app.MapControllerRoute(
-    name: "default",
-    pattern: "{area=User}/{controller=UserHome}/{action=Index}/{id?}");
+    name: "root",
+    pattern: "/",
+    defaults: new { area = "User", controller = "UserHome", action = "Index" });
+
 
 app.Run();
