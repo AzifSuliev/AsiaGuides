@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: AsiaGuides
+    env: dotnet
+    buildCommand: dotnet build AsiaGuides.sln
+    startCommand: dotnet run --project AsiaGuides
+    plan: free
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
