@@ -10,6 +10,10 @@ using AsiaGuides.Models;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.WebHost.UseUrls("http://0.0.0.0:10000");
+builder.Services.AddHttpsRedirection(options =>
+{
+    options.HttpsPort = 443; // или 5001, если вы используете этот порт
+});
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
