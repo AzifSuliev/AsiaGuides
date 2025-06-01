@@ -10,11 +10,6 @@ using AsiaGuides.Models;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.WebHost.UseUrls("http://0.0.0.0:10000");
-builder.WebHost.ConfigureKestrel(options =>
-{
-    options.ListenAnyIP(10000); // HTTP
-    options.ListenAnyIP(443, listenOptions => listenOptions.UseHttps()); // HTTPS
-});
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
