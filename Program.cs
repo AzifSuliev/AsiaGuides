@@ -17,8 +17,9 @@ builder.Services.AddHttpsRedirection(options =>
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("connectionString")));
 
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
