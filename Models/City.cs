@@ -8,10 +8,10 @@ namespace AsiaGuides.Models
         public int Id { get; set; }
         [Required]
         [MaxLength(30)]
-        public string? Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         [Required]
         [MaxLength(100)]
-        public string? Description { get; set; }
+        public string Description { get; set; } = string.Empty;
         public string? ImageUrl { get; set; }
         [Required(ErrorMessage = "You must select a country")]
         public int CountryId { get; set; }
