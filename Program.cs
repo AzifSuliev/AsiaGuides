@@ -63,5 +63,10 @@ app.MapControllerRoute(
     name: "areas",
     pattern: "{area:exists}/{controller=UserHome}/{action=Index}/{id?}");
 
+app.MapGet("/", context =>
+{
+    context.Response.Redirect("/User/UserHome/Index");
+    return Task.CompletedTask;
+});
 
 app.Run();
