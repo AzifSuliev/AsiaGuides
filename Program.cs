@@ -9,18 +9,12 @@ using AsiaGuides.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
-var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
-builder.Services.AddHttpsRedirection(options =>
-{
-    options.HttpsPort = 443; // или 5001, если вы используете этот порт
-});
+
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>

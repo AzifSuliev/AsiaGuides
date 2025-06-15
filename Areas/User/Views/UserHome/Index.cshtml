@@ -7,9 +7,18 @@
                     @foreach (var country in Model.OrderBy(c => c.Name))
                     {
                         var isActive = country == Model.OrderBy(c => c.Name).First();
+                        string imageUrl;
+                        if (string.IsNullOrEmpty(country.ImageUrl))
+                        {
+                            imageUrl = "/images/empty.png";
+                        }
+                        else
+                        {
+                            imageUrl = country.ImageUrl;
+                        }
                         <!-- первый элемент активен -->
                         <div class="carousel-item @(isActive ? "active" : "")" data-bs-interval="5000">
-                            <img src="@country.ImageUrl" class="d-block w-100" style="border-radius:15px;" alt="@country.Name">
+                            <img src="@imageUrl" class="d-block w-100" style="border-radius:15px;" alt="@country.Name">
                             <div class="carousel-caption d-none d-md-block">
                                 <h4 style="color:beige; text-shadow: 1px 1px 3px black;">@country.Name</h4>
                                 <p style="color:beige; text-shadow: 1px 1px 3px black;font-size:24px">@country.Description</p>
