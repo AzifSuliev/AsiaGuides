@@ -70,6 +70,4 @@ app.MapGet("/", context =>
     return Task.CompletedTask;
 });
 
-
-
 app.Run();
