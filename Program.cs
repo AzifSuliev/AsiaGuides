@@ -19,9 +19,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(ConnectionHelper.GetConnectionString(builder.Configuration)));
-
 builder.Services.AddControllersWithViews();
 
 // For railway
