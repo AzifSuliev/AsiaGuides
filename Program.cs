@@ -12,10 +12,14 @@ builder.Services.AddControllersWithViews();
 
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+
 // For localhost
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+//var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw 
+//    new InvalidOperationException("Connection string 'DefaultConnection' is not found!");
+//builder.Services.AddDbContext<ApplicationDbContext>(options =>
+//    options.UseNpgsql(connectionString));
+
+builder.Services.AddControllersWithViews();
 
 // For railway
 //var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
@@ -42,14 +46,22 @@ builder.Services.AddRazorPages();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    // app.UseDeveloperExceptionPage(); // для проверки
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    await context.Database.MigrateAsync();
+    await DataHelper.ManageDataAsync(scope.ServiceProvider);
 }
+
+    // Configure the HTTP request pipeline.
+    if (!app.Environment.IsDevelopment())
+    {
+        // app.UseDeveloperExceptionPage(); // для проверки
+        app.UseExceptionHandler("/Home/Error");
+        // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+        app.UseHsts();
+    }
 //app.UseHttpsRedirection(); 
 app.UseStaticFiles();
 
