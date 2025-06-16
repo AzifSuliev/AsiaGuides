@@ -6,18 +6,21 @@ using AsiaGuides.Utility;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using AsiaGuides.Models;
 
-
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddControllersWithViews();
 
 
 // Add services to the container.
 
 // For localhost
-//var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw 
+//var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw
 //    new InvalidOperationException("Connection string 'DefaultConnection' is not found!");
 //builder.Services.AddDbContext<ApplicationDbContext>(options =>
 //    options.UseNpgsql(connectionString));
+
+
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(ConnectionHelper.GetConnectionString(builder.Configuration)));
 
 builder.Services.AddControllersWithViews();
 
