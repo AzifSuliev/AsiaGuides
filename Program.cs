@@ -12,14 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 // For localhost
-//var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw
-//    new InvalidOperationException("Connection string 'DefaultConnection' is not found!");
-//builder.Services.AddDbContext<ApplicationDbContext>(options =>
-//    options.UseNpgsql(connectionString));
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw
+    new InvalidOperationException("Connection string 'DefaultConnection' is not found!");
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString));
 
 
-
-builder.Services.AddControllersWithViews();
 
 // For railway
 //var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
@@ -27,6 +25,8 @@ builder.Services.AddControllersWithViews();
 //builder.Services.AddDbContext<ApplicationDbContext>(options =>
 //    options.UseNpgsql(connectionString));
 
+
+builder.Services.AddControllersWithViews();
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -46,13 +46,6 @@ builder.Services.AddRazorPages();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<ApplicationDbContext>();
-    await context.Database.MigrateAsync();
-    await DataHelper.ManageDataAsync(scope.ServiceProvider);
-}
 
     // Configure the HTTP request pipeline.
     if (!app.Environment.IsDevelopment())
