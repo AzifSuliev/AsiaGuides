@@ -1,5 +1,7 @@
 ﻿using AsiaGuides.Data;
 using AsiaGuides.Utility;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,16 +14,19 @@ namespace AsiaGuides.Areas.Admin.Controllers
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly Cloudinary _cloudinary;
 
-        public MaintenanceController(ApplicationDbContext _dbContext, IWebHostEnvironment _webHostEnvironment)
+        public MaintenanceController(ApplicationDbContext _dbContext, IWebHostEnvironment _webHostEnvironment, Cloudinary _cloudinary)
         {
             this._dbContext = _dbContext;
             this._webHostEnvironment = _webHostEnvironment;
+            this._cloudinary = _cloudinary;
         }
 
         [HttpPost]
         public async Task<IActionResult> CleanUnusedImages()
         {
+            var usedImageUrls = new HashSet<string>();
             // Страны
             // Получаем список путей к изображениям, используемым в таблице Countries,
             // исключая те записи, у которых ImageUrl пустой или null.
@@ -29,7 +34,7 @@ namespace AsiaGuides.Areas.Admin.Controllers
             // Оставляем только те города, у которых ImageUrl указан
             .Where(c => !string.IsNullOrEmpty(c.ImageUrl))
             // Убираем ведущий символ '/' из пути к файлу, чтобы он соответствовал пути в файловой системе
-            .Select(c => c.ImageUrl.TrimStart('/'))
+            .Select(c => c.ImageUrl)
             // Выполняем запрос к базе данных и получаем список строк
             .ToListAsync();
 
@@ -41,7 +46,7 @@ namespace AsiaGuides.Areas.Admin.Controllers
             // Оставляем только те города, у которых ImageUrl указан
             .Where(c => !string.IsNullOrEmpty(c.ImageUrl))
             // Убираем ведущий символ '/' из пути к файлу, чтобы он соответствовал пути в файловой системе
-            .Select(c => c.ImageUrl.TrimStart('/'))
+            .Select(c => c.ImageUrl)
             // Выполняем запрос к базе данных и получаем список строк
             .ToListAsync();
 
@@ -49,25 +54,48 @@ namespace AsiaGuides.Areas.Admin.Controllers
 
             var attractionImages = await _dbContext.AttractionImage
                 .Where(a => !string.IsNullOrEmpty(a.ImageUrl))
-                .Select(a => a.ImageUrl.TrimStart('/'))
+                .Select(a => a.ImageUrl)
                 .ToListAsync();
 
-            List<string> allImages = new List<string>();
-            allImages.AddRange(countryImages);
-            allImages.AddRange(cityImages);
-            allImages.AddRange(attractionImages);
+            var allCloudinaryResources = new List<Resource>();
+            string nextCursor = null;
 
-            string imagesPath = Path.Combine(_webHostEnvironment.WebRootPath, "images");
-            var allFiles = Directory.GetFiles(imagesPath);
+            do
+            {
+                var listParams = new ListResourcesParams
+                {
+                    Type = "upload",
+                    MaxResults = 500,
+                    NextCursor = nextCursor
+                };
+
+                var result = await _cloudinary.ListResourcesAsync(listParams);
+
+                if (result.Resources != null)
+                    allCloudinaryResources.AddRange(result.Resources);
+
+                nextCursor = result.NextCursor;
+
+            } while (!string.IsNullOrEmpty(nextCursor));
+
+            //List<string> allImages = new List<string>();
+            //allImages.AddRange(countryImages);
+            //allImages.AddRange(cityImages);
+            //allImages.AddRange(attractionImages);
+
+            //string imagesPath = Path.Combine(_webHostEnvironment.WebRootPath, "images");
+            //var allFiles = Directory.GetFiles(imagesPath);
 
             int deletedCount = 0;
-            foreach (var file in allFiles)
+            foreach (var resource in allCloudinaryResources)
             {
-                string relativePath = "images/" + Path.GetFileName(file);
-                if (!allImages.Contains(relativePath) && Path.GetFileName(file) != "empty.png")
+                string secureUrl = resource.SecureUrl.ToString();
+
+                if (!usedImageUrls.Contains(secureUrl) && !secureUrl.EndsWith("empty.png"))
                 {
-                    System.IO.File.Delete(file);
-                    deletedCount++;
+                    var deleteResult = await _cloudinary.DestroyAsync(new DeletionParams(resource.PublicId));
+                    if (deleteResult.Result == "ok" || deleteResult.Result == "deleted")
+                        deletedCount++;
                 }
             }
 
