@@ -75,6 +75,11 @@ namespace AsiaGuides.Areas.Admin.Controllers
                         // Генерируем уникальное имя файла
                         string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
                         // Сохраняем файл на диск 
+                        if (!Directory.Exists(attractionPath))
+                        {
+                            Directory.CreateDirectory(attractionPath);
+                        }
+
                         using (var fileStream = new FileStream(Path.Combine(attractionPath, fileName), FileMode.Create))
                         {
                             await file.CopyToAsync(fileStream);
@@ -147,6 +152,11 @@ namespace AsiaGuides.Areas.Admin.Controllers
                         // Генерируем уникальное имя файла
                         string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
                         // Сохраняем файл на диск 
+                        if (!Directory.Exists(attractionPath))
+                        {
+                            Directory.CreateDirectory(attractionPath);
+                        }
+
                         using (var fileStream = new FileStream(Path.Combine(attractionPath, fileName), FileMode.Create))
                         {
                             await file.CopyToAsync(fileStream);

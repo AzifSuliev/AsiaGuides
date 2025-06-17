@@ -58,7 +58,10 @@ namespace AsiaGuides.Areas.Admin.Controllers
             {
                 string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
                 string countryPath = Path.Combine(wwwRootPath, "images");
-
+                if (!Directory.Exists(countryPath))
+                {
+                    Directory.CreateDirectory(countryPath);
+                }
                 using (var fileStream = new FileStream(Path.Combine(countryPath, fileName), FileMode.Create))
                 {
                    await file.CopyToAsync(fileStream);
@@ -103,6 +106,10 @@ namespace AsiaGuides.Areas.Admin.Controllers
                 // Генерируем уникальное имя для файла
                 string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
                 string countryPath = Path.Combine(wwwRootPath, "images");
+                if (!Directory.Exists(countryPath))
+                {
+                    Directory.CreateDirectory(countryPath);
+                }
 
                 // Создаем файл в папке "images"
                 using (var fileStream = new FileStream(Path.Combine(countryPath, fileName), FileMode.Create))

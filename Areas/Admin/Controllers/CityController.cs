@@ -77,6 +77,11 @@ namespace AsiaGuides.Areas.Admin.Controllers
                 // Путь к папке "images"
                 string cityPath = Path.Combine(wwwRootPath, "images");
                 // Сохраняем файл на диск
+                if (!Directory.Exists(cityPath))
+                {
+                    Directory.CreateDirectory(cityPath);
+                }
+
                 using (var fileStream = new FileStream(Path.Combine(cityPath, fileName), FileMode.Create))
                 {
                     await file.CopyToAsync(fileStream);
@@ -133,6 +138,10 @@ namespace AsiaGuides.Areas.Admin.Controllers
             {
                 string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
                 string cityPath = Path.Combine(wwwRootPath, "images");
+                if (!Directory.Exists(cityPath))
+                {
+                    Directory.CreateDirectory(cityPath);
+                }
                 using (var fileStream = new FileStream(Path.Combine(cityPath, fileName), FileMode.Create))
                 {
                     await file.CopyToAsync(fileStream);
