@@ -1,10 +1,11 @@
 using AsiaGuides.Data;
+using AsiaGuides.Models;
+using AsiaGuides.Utility;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Identity;
-using AsiaGuides.Utility;
-using Microsoft.AspNetCore.Identity.UI.Services;
-using AsiaGuides.Models;
+using RailwayDeploying.Utility;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,10 +13,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 // For localhost
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw
-    new InvalidOperationException("Connection string 'DefaultConnection' is not found!");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+//var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw
+//    new InvalidOperationException("Connection string 'DefaultConnection' is not found!");
+//builder.Services.AddDbContext<ApplicationDbContext>(options =>
+//    options.UseNpgsql(connectionString));
 
 
 
@@ -24,6 +25,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 //                       ?? builder.Configuration.GetConnectionString("DefaultConnection");
 //builder.Services.AddDbContext<ApplicationDbContext>(options =>
 //    options.UseNpgsql(connectionString));
+
+
+var connectionString = ConnectionHelper.GetConnectionString(builder.Configuration);
+builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
 
 
 builder.Services.AddControllersWithViews();
@@ -46,9 +51,16 @@ builder.Services.AddRazorPages();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    await context.Database.MigrateAsync();
+    await DataHelper.ManageDataAsync(scope.ServiceProvider);
+}
 
-    // Configure the HTTP request pipeline.
-    if (!app.Environment.IsDevelopment())
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
     {
         // app.UseDeveloperExceptionPage(); // для проверки
         app.UseExceptionHandler("/Home/Error");
