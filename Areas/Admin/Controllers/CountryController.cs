@@ -1,10 +1,11 @@
 ﻿using AsiaGuides.Data;
 using AsiaGuides.Models;
 using AsiaGuides.Utility;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace AsiaGuides.Areas.Admin.Controllers
 {
@@ -12,195 +13,141 @@ namespace AsiaGuides.Areas.Admin.Controllers
     [Authorize(Roles = StaticDetails.Role_Admin)]
     public class CountryController : Controller
     {
-        private ApplicationDbContext _dbContext;
-        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly ApplicationDbContext _dbContext;
         private readonly ILogger<CountryController> _logger;
-        public CountryController(ApplicationDbContext dbContext, IWebHostEnvironment webHostEnvironment, ILogger<CountryController> logger)
+        private readonly Cloudinary _cloudinary;
+
+        public CountryController(ApplicationDbContext dbContext, ILogger<CountryController> logger, Cloudinary cloudinary)
         {
             _dbContext = dbContext;
-            _webHostEnvironment = webHostEnvironment;
             _logger = logger;
+            _cloudinary = cloudinary;
         }
+
         public async Task<IActionResult> Index()
         {
-            IEnumerable<Country> countriesFromDb = await _dbContext.Countries.ToListAsync();
-            if (!countriesFromDb.Any())
+            var countries = await _dbContext.Countries.ToListAsync();
+            if (!countries.Any())
             {
                 ViewBag.Message = "There are no countries in the list yet";
                 return View("Empty");
             }
-            return View(countriesFromDb);
+            return View(countries);
         }
 
         [HttpGet]
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || id == 0) return NotFound(); // Проверка на null
-            Country? countryFromDb = await _dbContext.Countries.Include(c => c.Cities).FirstOrDefaultAsync(c => c.Id == id); // Используем id.Value
-            if (countryFromDb == null) return NotFound(); // Если country не найдено
-            return View(countryFromDb);
+            if (id == null) return NotFound();
+
+            var country = await _dbContext.Countries
+                .Include(c => c.Cities)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            return country == null ? NotFound() : View(country);
         }
 
         [HttpGet]
-        public IActionResult Create()
-        {
-            return View();
-        }
+        public IActionResult Create() => View();
 
         [HttpPost]
         public async Task<IActionResult> Create(Country country, IFormFile file)
         {
-            if (!ModelState.IsValid) return View();
+            if (!ModelState.IsValid) return View(country);
 
-            string wwwRootPath = _webHostEnvironment.WebRootPath;
+            country.ImageUrl = await UploadImageAsync(file) ?? "/images/empty.png";
 
-            if (file != null && file.Length > 0)
-            {
-                string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                string countryPath = Path.Combine(wwwRootPath, "images");
-                if (!Directory.Exists(countryPath))
-                {
-                    Directory.CreateDirectory(countryPath);
-                }
-                using (var fileStream = new FileStream(Path.Combine(countryPath, fileName), FileMode.Create))
-                {
-                   await file.CopyToAsync(fileStream);
-                }
-
-                country.ImageUrl = "/images/" + fileName;
-            }
-            else
-            {
-                country.ImageUrl = "/images/empty.png";
-            }
-
-            await _dbContext.Countries.AddAsync(country);
+            _dbContext.Countries.Add(country);
             await _dbContext.SaveChangesAsync();
+
             TempData["success"] = "The country has been created successfully";
-            return RedirectToAction(nameof(Index), "Country");
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]
         public async Task<IActionResult> Edit(int? id)
         {
             if (!id.HasValue) return NotFound();
-            Country countryFromDb = await _dbContext.Countries.FindAsync(id); // Используем id.Value
-            if (countryFromDb == null) return NotFound(); // Если country не найдено
-            return View(countryFromDb);
+
+            var country = await _dbContext.Countries.FindAsync(id);
+            return country == null ? NotFound() : View(country);
         }
 
         [HttpPost]
         public async Task<IActionResult> Edit(Country country, IFormFile file)
         {
-            if (!ModelState.IsValid)
-            {
-                return View(country); // Возвращаем модель с ошибками валидации
-            }
+            if (!ModelState.IsValid) return View(country);
 
-            // Получаем путь для сохранения изображения
-            string wwwRootPath = _webHostEnvironment.WebRootPath;
+            var countryFromDb = await _dbContext.Countries.FindAsync(country.Id);
+            if (countryFromDb == null) return NotFound();
 
-            // Проверяем, если есть файл, то загружаем его
             if (file != null && file.Length > 0)
             {
-                // Генерируем уникальное имя для файла
-                string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                string countryPath = Path.Combine(wwwRootPath, "images");
-                if (!Directory.Exists(countryPath))
-                {
-                    Directory.CreateDirectory(countryPath);
-                }
-
-                // Создаем файл в папке "images"
-                using (var fileStream = new FileStream(Path.Combine(countryPath, fileName), FileMode.Create))
-                {
-                    await file.CopyToAsync(fileStream); // Асинхронное копирование
-                }
-
-                country.ImageUrl = "/images/" + fileName; // Обновляем путь изображения
+                country.ImageUrl = await UploadImageAsync(file);
             }
-            else if (string.IsNullOrEmpty(country.ImageUrl)) // Если не был выбран файл, ставим дефолтное изображение
+            else if (string.IsNullOrEmpty(country.ImageUrl))
             {
-                country.ImageUrl = "/images/empty.png"; // Дефолтное изображение для страны
+                country.ImageUrl = "/images/empty.png";
             }
 
-            // Проверяем существует ли страна в базе данных перед обновлением
-            var countryFromDb = await _dbContext.Countries.FindAsync(country.Id);
-            if (countryFromDb == null)
-            {
-                return NotFound(); // Если страна не найдена, возвращаем ошибку 404
-            }
-
-            var trackedCountry = _dbContext.Countries.Local.FirstOrDefault(c => c.Id == country.Id);
-            if (trackedCountry != null)
-            {
-                _dbContext.Entry(trackedCountry).State = EntityState.Detached;  // Отключаем отслеживание старой сущности
-            }
-
-            // Обновляем информацию о стране в базе данных
+            _dbContext.Entry(countryFromDb).State = EntityState.Detached;
             _dbContext.Countries.Update(country);
             await _dbContext.SaveChangesAsync();
-            TempData["success"] = "The country has been edited successfully";
-            return RedirectToAction(nameof(Index), "Country"); // Перенаправляем на страницу списка стран
-        }
 
+            TempData["success"] = "The country has been edited successfully";
+            return RedirectToAction(nameof(Index));
+        }
 
         [HttpGet]
         public async Task<IActionResult> Delete(int? id)
         {
             if (!id.HasValue) return NotFound();
-            Country countryToBeDeleted = await _dbContext.Countries.FindAsync(id);
-            if (countryToBeDeleted == null) return NotFound();
-            return View(countryToBeDeleted);
+
+            var country = await _dbContext.Countries.FindAsync(id);
+            return country == null ? NotFound() : View(country);
         }
 
         [HttpPost, ActionName("Delete")]
-        public async Task<IActionResult> DeletPost(int id)
+        public async Task<IActionResult> DeletePost(int id)
         {
-            Country countryToBeDeleted = await _dbContext.Countries.FindAsync(id);
-            if (countryToBeDeleted == null) return NotFound();
+            var country = await _dbContext.Countries.FindAsync(id);
+            if (country == null) return NotFound();
 
-            if(!string.IsNullOrEmpty(countryToBeDeleted.ImageUrl))
-            {
-                var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, countryToBeDeleted.ImageUrl.TrimStart('\\'));
-                if (System.IO.File.Exists(oldImagePath)) System.IO.File.Delete(oldImagePath);
-            }
-
-            _dbContext.Countries.Remove(countryToBeDeleted);
+            _dbContext.Countries.Remove(country);
             await _dbContext.SaveChangesAsync();
+
             TempData["success"] = "The country has been deleted successfully";
-            return RedirectToAction(nameof(Index), "Country");
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
         public async Task<IActionResult> DeleteImage(int countryId)
         {
-            Country country = await _dbContext.Countries.FindAsync(countryId);
-            if(country == null) return NotFound();
-            string imageUrl = country.ImageUrl;
-            if (string.IsNullOrEmpty(imageUrl)) return NotFound();
-            // Удаляем физический файл
-            var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, imageUrl.TrimStart('\\'));
-            try
-            {
-                if (System.IO.File.Exists(oldImagePath))
-                {
-                    System.IO.File.Delete(oldImagePath);
-                }
-                else
-                {
-                    _logger.LogWarning($"The file {oldImagePath} does not exist.", oldImagePath);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"Error: {ex.Message}");
-            }
-            _dbContext.Countries.Update(country);
+            var country = await _dbContext.Countries.FindAsync(countryId);
+            if (country == null || string.IsNullOrEmpty(country.ImageUrl)) return NotFound();
+
             country.ImageUrl = null;
+            _dbContext.Countries.Update(country);
             await _dbContext.SaveChangesAsync();
 
-            return StatusCode(StatusCodes.Status200OK);
+            return Ok();
+        }
+
+        private async Task<string?> UploadImageAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0) return null;
+
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription(file.FileName, file.OpenReadStream()),
+                Transformation = new Transformation().Width(500).Height(500).Crop("fill")
+            };
+
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+            return uploadResult.StatusCode == System.Net.HttpStatusCode.OK
+                ? uploadResult.SecureUrl.ToString()
+                : null;
         }
     }
 }

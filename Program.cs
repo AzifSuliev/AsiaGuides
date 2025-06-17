@@ -1,6 +1,7 @@
 using AsiaGuides.Data;
 using AsiaGuides.Models;
 using AsiaGuides.Utility;
+using CloudinaryDotNet;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -49,6 +50,16 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.Configure<CloudinarySettings>(
+    builder.Configuration.GetSection("CloudinarySettings"));
+
+builder.Services.AddSingleton(cloudinary =>
+{
+    var config = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>();
+    Account account = new Account(config.CloudName, config.ApiKey, config.ApiSecret);
+    return new CloudinaryDotNet.Cloudinary(account);
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

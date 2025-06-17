@@ -12,6 +12,7 @@ namespace AsiaGuides.Areas.Admin.Controllers
     {
         private readonly ApplicationDbContext _dbContext;
         private readonly IWebHostEnvironment _webHostEnvironment;
+
         public MaintenanceController(ApplicationDbContext _dbContext, IWebHostEnvironment _webHostEnvironment)
         {
             this._dbContext = _dbContext;

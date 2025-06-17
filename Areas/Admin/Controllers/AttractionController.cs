@@ -1,6 +1,8 @@
 ﻿using AsiaGuides.Data;
 using AsiaGuides.Models;
 using AsiaGuides.Utility;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -12,17 +14,20 @@ namespace AsiaGuides.Areas.Admin.Controllers
     [Authorize(Roles = StaticDetails.Role_Admin)]
     public class AttractionController : Controller
     {
-        private ApplicationDbContext _dbContext;
+        private readonly ApplicationDbContext _dbContext;
         private readonly IWebHostEnvironment _webHostEnvironment;
-        public AttractionController(ApplicationDbContext _dbContext, IWebHostEnvironment _webHostEnvironment)
+        private readonly Cloudinary _cloudinary;
+
+        public AttractionController(ApplicationDbContext dbContext, IWebHostEnvironment webHostEnvironment, Cloudinary cloudinary)
         {
-            this._dbContext = _dbContext;
-            this._webHostEnvironment = _webHostEnvironment;
+            _dbContext = dbContext;
+            _webHostEnvironment = webHostEnvironment;
+            _cloudinary = cloudinary;
         }
 
         public async Task<IActionResult> Index()
         {
-            IEnumerable<Attraction> attractions = await _dbContext.Attractions.Include(a => a.Images).ToListAsync();
+            var attractions = await _dbContext.Attractions.Include(a => a.Images).ToListAsync();
             if (!attractions.Any())
             {
                 ViewBag.Message = "There are no attractions in the list yet";
@@ -31,16 +36,17 @@ namespace AsiaGuides.Areas.Admin.Controllers
             return View(attractions);
         }
 
-        [HttpGet]
         public async Task<IActionResult> Details(int? id)
         {
-            if (!id.HasValue) return NotFound();
-            Attraction attractionFromDb = await _dbContext.Attractions.Include(a => a.Images).FirstOrDefaultAsync(a => a.Id == id);
-            if (attractionFromDb == null) return NotFound();
-            return View(attractionFromDb);
+            if (id == null) return NotFound();
+
+            var attraction = await _dbContext.Attractions
+                .Include(a => a.Images)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            return attraction == null ? NotFound() : View(attraction);
         }
 
-        [HttpGet]
         public async Task<IActionResult> Create()
         {
             ViewBag.CityList = new SelectList(await _dbContext.Cities.ToListAsync(), "Id", "Name");
@@ -50,181 +56,142 @@ namespace AsiaGuides.Areas.Admin.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(Attraction attraction, List<IFormFile> files)
         {
-            // Проверка модели на валидность
             if (!ModelState.IsValid)
             {
-                // Если модель некорректна, возвращаем список городов для выпадающего списка и возвращаем форму обратно
                 ViewBag.CityList = new SelectList(await _dbContext.Cities.ToListAsync(), "Id", "Name");
                 return View(attraction);
             }
-            // Сначала сохраняем объект Attraction в базу данных (без изображений)
-            await _dbContext.Attractions.AddAsync(attraction);
-            await _dbContext.SaveChangesAsync(); // Это нужно, чтобы attraction.Id стал доступен
-            // Если были загружены изображения
-            if (files != null && files.Count > 0)
-            {
-                foreach (var file in files)
-                {
-                    // Путь к wwwroot
-                    string wwwRootPath = _webHostEnvironment.WebRootPath;
-                    // Путь к папке с изображениями
-                    string attractionPath = Path.Combine(wwwRootPath, "images");
-                    // Если файл загружен
-                    if (file != null && file.Length > 0)
-                    {
-                        // Генерируем уникальное имя файла
-                        string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                        // Сохраняем файл на диск 
-                        if (!Directory.Exists(attractionPath))
-                        {
-                            Directory.CreateDirectory(attractionPath);
-                        }
 
-                        using (var fileStream = new FileStream(Path.Combine(attractionPath, fileName), FileMode.Create))
-                        {
-                            await file.CopyToAsync(fileStream);
-                        }
-                        // Создаём объект изображения и связываем его с достопримечательностью
-                        var attractionImage = new AttractionImage()
-                        {
-                            ImageUrl = "/images/" + fileName,
-                            AttractionId = attraction.Id
-                        };
-                        // Добавляем изображение в коллекцию
-                        attraction.Images.Add(attractionImage);
-                    }
-                }
-                // Сохраняем изображения в базу данных
-                await _dbContext.SaveChangesAsync();
-            }
-            // Успешное сообщение
+            await _dbContext.Attractions.AddAsync(attraction);
+            await _dbContext.SaveChangesAsync();
+
+            await UploadImagesToCloudinary(attraction, files);
+            await _dbContext.SaveChangesAsync();
+
             TempData["success"] = "The attraction has been created successfully";
-            // Перенаправление на список достопримечательностей
-            return RedirectToAction(nameof(Index), "Attraction");
+            return RedirectToAction(nameof(Index));
         }
 
-        [HttpGet]
         public async Task<IActionResult> Edit(int? id)
         {
-            if (!id.HasValue) return NotFound();
-            Attraction attractionFromDb = await _dbContext.Attractions.Include(a => a.Images).FirstOrDefaultAsync(a => a.Id == id.Value);
-            if (attractionFromDb == null) return NotFound();
-            // Список городов для выбора
+            if (id == null) return NotFound();
+
+            var attraction = await _dbContext.Attractions
+                .Include(a => a.Images)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (attraction == null) return NotFound();
+
             ViewBag.CityList = new SelectList(await _dbContext.Cities.ToListAsync(), "Id", "Name");
-            return View(attractionFromDb);
+            return View(attraction);
         }
 
         [HttpPost]
         public async Task<IActionResult> Edit(Attraction attraction, List<IFormFile> files)
         {
-            // Проверка модели на валидность
             if (!ModelState.IsValid)
             {
-                // Если модель некорректна, возвращаем список городов для выпадающего списка и возвращаем форму обратно
                 ViewBag.CityList = new SelectList(await _dbContext.Cities.ToListAsync(), "Id", "Name");
                 return View(attraction);
             }
-            // Загружаем старую достопримечательность из базы вместе с изображениями
-            var attractionFromDb = await _dbContext.Attractions.Include(a => a.Images).FirstOrDefaultAsync(a => a.Id == attraction.Id);
+
+            var attractionFromDb = await _dbContext.Attractions
+                .Include(a => a.Images)
+                .FirstOrDefaultAsync(a => a.Id == attraction.Id);
 
             if (attractionFromDb == null) return NotFound();
 
-            // Обновляем свойства
             attractionFromDb.Name = attraction.Name;
             attractionFromDb.Description = attraction.Description;
             attractionFromDb.Rating = attraction.Rating;
             attractionFromDb.OpeningHours = attraction.OpeningHours;
             attractionFromDb.CityId = attraction.CityId;
 
-
-            // Если были загружены изображения
-            if (files != null && files.Count > 0)
-            {
-                foreach (var file in files)
-                {
-                    // Путь к папке wwwroot
-                    string wwwRootPath = _webHostEnvironment.WebRootPath;
-                    // Путь к папке с изображениями
-                    string attractionPath = Path.Combine(wwwRootPath, "images");
-                    // Если файл загружен 
-                    if (file != null && file.Length > 0)
-                    {
-                        // Генерируем уникальное имя файла
-                        string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                        // Сохраняем файл на диск 
-                        if (!Directory.Exists(attractionPath))
-                        {
-                            Directory.CreateDirectory(attractionPath);
-                        }
-
-                        using (var fileStream = new FileStream(Path.Combine(attractionPath, fileName), FileMode.Create))
-                        {
-                            await file.CopyToAsync(fileStream);
-                        }
-                        // Создаём объект изображения и связываем его с достопримечательностью
-                        var attractionImage = new AttractionImage()
-                        {
-                            ImageUrl = "/images/" + fileName,
-                            AttractionId = attraction.Id
-                        };
-                        // Добавляем изображение в коллекцию
-                        attractionFromDb.Images.Add(attractionImage);
-                    }
-                }
-            }
-            // Сохраняем изображения в базу данных
+            await UploadImagesToCloudinary(attractionFromDb, files);
             await _dbContext.SaveChangesAsync();
-            // Успешное сообщение
+
             TempData["success"] = "The attraction has been edited successfully";
-            // Перенаправление на список достопримечательностей
-            return RedirectToAction(nameof(Index), "Attraction");
+            return RedirectToAction(nameof(Index));
         }
 
-        [HttpGet]
         public async Task<IActionResult> Delete(int? id)
         {
-            if (!id.HasValue) return NotFound();
-            Attraction attraction = await _dbContext.Attractions.FirstOrDefaultAsync(a => a.Id == id.Value);
-            if (attraction == null) return NotFound();
-            return View(attraction);
+            if (id == null) return NotFound();
+
+            var attraction = await _dbContext.Attractions.FirstOrDefaultAsync(a => a.Id == id);
+            return attraction == null ? NotFound() : View(attraction);
         }
 
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeletePost(int? id)
         {
-            if (!id.HasValue) return NotFound();
-            Attraction attractionToBeDeleted = await _dbContext.Attractions.Include(a => a.Images).FirstOrDefaultAsync(a => a.Id == id.Value);
-            if (attractionToBeDeleted == null) return NotFound();
-            foreach (var image in attractionToBeDeleted.Images)
+            if (id == null) return NotFound();
+
+            var attraction = await _dbContext.Attractions
+                .Include(a => a.Images)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (attraction == null) return NotFound();
+
+            foreach (var image in attraction.Images)
             {
                 if (!string.IsNullOrEmpty(image.ImageUrl))
                 {
-                    var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, image.ImageUrl.TrimStart('\\'));
-                    if (System.IO.File.Exists(oldImagePath)) System.IO.File.Delete(oldImagePath);
+                    // Здесь можно добавить Cloudinary удаление, если потребуется
                 }
             }
-            _dbContext.Attractions.Remove(attractionToBeDeleted);
+
+            _dbContext.Attractions.Remove(attraction);
             await _dbContext.SaveChangesAsync();
+
             TempData["success"] = "The attraction has been deleted successfully";
-            return RedirectToAction(nameof(Index), "Attraction");
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
         public async Task<IActionResult> DeleteImage(int attractionId, int imageId)
         {
-            var attraction = await _dbContext.Attractions.Include(a => a.Images).FirstOrDefaultAsync(a => a.Id == attractionId);
+            var attraction = await _dbContext.Attractions
+                .Include(a => a.Images)
+                .FirstOrDefaultAsync(a => a.Id == attractionId);
+
             if (attraction == null) return NotFound();
+
             var image = attraction.Images.FirstOrDefault(i => i.Id == imageId);
             if (image == null) return NotFound();
-            // Удаляем физический файл
-            var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, image.ImageUrl.TrimStart('\\'));
-            if (System.IO.File.Exists(oldImagePath))
-            {
-                System.IO.File.Delete(oldImagePath);
-            }
+
             attraction.Images.Remove(image);
             await _dbContext.SaveChangesAsync();
+
             return StatusCode(StatusCodes.Status200OK);
+        }
+
+        private async Task UploadImagesToCloudinary(Attraction attraction, List<IFormFile> files)
+        {
+            if (files == null || files.Count == 0) return;
+
+            foreach (var file in files)
+            {
+                if (file?.Length > 0)
+                {
+                    var uploadParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(file.FileName, file.OpenReadStream()),
+                        Transformation = new Transformation().Width(800).Height(600).Crop("fill")
+                    };
+
+                    var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+                    if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        attraction.Images.Add(new AttractionImage
+                        {
+                            ImageUrl = uploadResult.SecureUrl.ToString(),
+                            AttractionId = attraction.Id
+                        });
+                    }
+                }
+            }
         }
     }
 }
