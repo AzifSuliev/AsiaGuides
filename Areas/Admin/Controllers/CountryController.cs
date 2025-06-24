@@ -50,7 +50,7 @@ namespace AsiaGuides.Areas.Admin.Controllers
                     }
                     else
                     {
-                        Console.WriteLine($"File {result.SecureUrl} exists");
+                        ViewBag.Message = $"File {result.SecureUrl} exists";
                     }
                 }
                 catch(Exception ex)
