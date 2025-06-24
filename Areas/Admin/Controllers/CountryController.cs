@@ -44,7 +44,7 @@ namespace AsiaGuides.Areas.Admin.Controllers
                 {
 
                     var result = cloudinary.GetResource(new GetResourceParams(item));
-                    if (result == null || string.IsNullOrEmpty(result.SecureUrl))
+                    if (result == null || result.SecureUrl == null)
                     {
                         ViewBag.Message = $"File is not found";
                     }
