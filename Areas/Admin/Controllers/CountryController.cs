@@ -6,6 +6,7 @@ using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography.Xml;
 
 namespace AsiaGuides.Areas.Admin.Controllers
 {
@@ -26,6 +27,39 @@ namespace AsiaGuides.Areas.Admin.Controllers
 
         public async Task<IActionResult> Index()
         {
+            var account = new Account("dftflczf1", "613875171863164", "uhe28k9WIl8p1YTSc6wlaVRKoPI");
+            var cloudinary = new Cloudinary(account);
+
+            List<string> publicIds = new List<string>()
+            {
+                "ngsir8v9lh2ecjg7hfbi",
+                "enxescglqqkvumhshlex",
+                "ihg1pff779lzsmczs40y",
+                "ihg1pff779lzsmczs40y"
+            };
+
+            foreach (var item in publicIds)
+            {
+                try
+                {
+
+                    var result = cloudinary.GetResource(new GetResourceParams(item));
+                    if (result == null || string.IsNullOrEmpty(result.SecureUrl))
+                    {
+                        Console.WriteLine($"File is not found");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"File {result.SecureUrl} exists");
+                    }
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine($"Error: {ex.Message}");
+                }
+
+            }
+
             var countries = await _dbContext.Countries.ToListAsync();
             if (!countries.Any())
             {
