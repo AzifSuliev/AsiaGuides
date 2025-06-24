@@ -14,7 +14,7 @@
                         }
                         else
                         {
-                            imageUrl = country.ImageUrl;
+                            imageUrl = $"https://res.cloudinary.com/dftflczf1/image/upload/w_800,q_80/{country.ImageUrl}";
                         }
                         <!-- первый элемент активен -->
                         <div class="carousel-item @(isActive ? "active" : "")" data-bs-interval="5000">
