@@ -137,7 +137,8 @@ namespace AsiaGuides.Areas.Admin.Controllers
             {
                 if (!string.IsNullOrEmpty(image.ImageUrl))
                 {
-                    // Здесь можно добавить Cloudinary удаление, если потребуется
+                    var deletionParams = new DeletionParams(image.PublicId);
+                    await _cloudinary.DestroyAsync(deletionParams);
                 }
             }
 
@@ -159,6 +160,11 @@ namespace AsiaGuides.Areas.Admin.Controllers
 
             var image = attraction.Images.FirstOrDefault(i => i.Id == imageId);
             if (image == null) return NotFound();
+            if (!string.IsNullOrEmpty(image.PublicId))
+            {
+                var deletionParams = new DeletionParams(image.PublicId);
+                await _cloudinary.DestroyAsync(deletionParams);
+            }
 
             attraction.Images.Remove(image);
             await _dbContext.SaveChangesAsync();
@@ -187,6 +193,7 @@ namespace AsiaGuides.Areas.Admin.Controllers
                         attraction.Images.Add(new AttractionImage
                         {
                             ImageUrl = uploadResult.SecureUrl.ToString(),
+                            PublicId = uploadResult.PublicId,
                             AttractionId = attraction.Id
                         });
                     }

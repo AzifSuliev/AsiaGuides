@@ -73,7 +73,10 @@ namespace AsiaGuides.Areas.Admin.Controllers
                 var uploadResult = await _cloudinary.UploadAsync(uploadParams);
 
                 if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+                {
                     city.ImageUrl = uploadResult.SecureUrl.ToString();
+                    city.PublicId = uploadResult.PublicId;
+                }
                 else
                 {
                     ModelState.AddModelError(string.Empty, "Image upload failed.");
@@ -131,6 +134,7 @@ namespace AsiaGuides.Areas.Admin.Controllers
                 if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
                 {
                     cityFromDb.ImageUrl = uploadResult.SecureUrl.ToString();
+                    cityFromDb.PublicId = uploadResult.PublicId;
                 }
                 else
                 {
@@ -173,22 +177,15 @@ namespace AsiaGuides.Areas.Admin.Controllers
             var city = await _dbContext.Cities.FindAsync(cityId);
             if (city == null || string.IsNullOrEmpty(city.ImageUrl)) return NotFound();
 
-            // Локальное удаление возможно только если путь относительный
-            if (!city.ImageUrl.StartsWith("http"))
+            if (!string.IsNullOrEmpty(city.PublicId))
             {
-                var imagePath = Path.Combine(_env.WebRootPath, city.ImageUrl.TrimStart('/'));
-                try
-                {
-                    if (System.IO.File.Exists(imagePath))
-                        System.IO.File.Delete(imagePath);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning($"Error deleting image: {ex.Message}");
-                }
+                // Удаляем из Cloudinary
+                var deletionParams = new DeletionParams(city.PublicId);
+                await _cloudinary.DestroyAsync(deletionParams);
             }
 
             city.ImageUrl = null;
+            city.PublicId = null;
             await _dbContext.SaveChangesAsync();
             return Ok();
         }

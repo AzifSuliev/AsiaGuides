@@ -92,6 +92,11 @@ namespace AsiaGuides.Areas.Admin.Controllers
 
             if (file != null && file.Length > 0)
             {
+                if (!string.IsNullOrEmpty(countryFromDb.ImagePublicId))
+                {
+                    var deletionParams = new DeletionParams(countryFromDb.ImagePublicId);
+                    await _cloudinary.DestroyAsync(deletionParams);
+                }
                 var uploadResult = await UploadImageAsync(file);
                 if (uploadResult != null)
                 {
@@ -104,9 +109,13 @@ namespace AsiaGuides.Areas.Admin.Controllers
                 country.ImageUrl = countryFromDb.ImageUrl;
                 country.ImagePublicId = countryFromDb.ImagePublicId;
             }
-
+            
             _dbContext.Entry(countryFromDb).State = EntityState.Detached;
-            _dbContext.Countries.Update(country);
+            countryFromDb.Name = country.Name;
+            countryFromDb.Description = country.Description;
+            countryFromDb.ImageUrl = country.ImageUrl;
+            countryFromDb.ImagePublicId = country.ImagePublicId;
+            _dbContext.Countries.Update(countryFromDb);
             await _dbContext.SaveChangesAsync();
 
             TempData["success"] = "The country has been edited successfully";
@@ -140,8 +149,14 @@ namespace AsiaGuides.Areas.Admin.Controllers
         {
             var country = await _dbContext.Countries.FindAsync(countryId);
             if (country == null || string.IsNullOrEmpty(country.ImageUrl)) return NotFound();
-
+            if (!string.IsNullOrEmpty(country.ImagePublicId))
+            {
+                // Удаляем из Cloudinary
+                var deletionParams = new DeletionParams(country.ImagePublicId);
+                await _cloudinary.DestroyAsync(deletionParams);
+            }
             country.ImageUrl = null;
+            country.ImagePublicId = null;
             _dbContext.Countries.Update(country);
             await _dbContext.SaveChangesAsync();
 
