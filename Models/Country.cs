@@ -13,6 +13,7 @@ namespace AsiaGuides.Models
         [MaxLength(100)]
         public string Description { get; set; } = string.Empty;
         public string? ImageUrl { get; set; }
+        public string? ImagePublicId { get; set; }
         public List<City> Cities { get; set; } = new();
     }
 }

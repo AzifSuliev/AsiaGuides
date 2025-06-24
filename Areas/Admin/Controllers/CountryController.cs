@@ -55,8 +55,16 @@ namespace AsiaGuides.Areas.Admin.Controllers
         public async Task<IActionResult> Create(Country country, IFormFile file)
         {
             if (!ModelState.IsValid) return View(country);
-
-            country.ImageUrl = await UploadImageAsync(file) ?? "/images/empty.png";
+            var uploadResult = await UploadImageAsync(file);
+            if (uploadResult != null)
+            {
+                country.ImageUrl = uploadResult.Value.ImageUrl;
+                country.ImagePublicId = uploadResult.Value.PublicId;
+            }
+            else
+            {
+                country.ImageUrl = "/images/empty.png";
+            }
 
             _dbContext.Countries.Add(country);
             await _dbContext.SaveChangesAsync();
@@ -84,11 +92,17 @@ namespace AsiaGuides.Areas.Admin.Controllers
 
             if (file != null && file.Length > 0)
             {
-                country.ImageUrl = await UploadImageAsync(file);
+                var uploadResult = await UploadImageAsync(file);
+                if (uploadResult != null)
+                {
+                    country.ImageUrl = uploadResult.Value.ImageUrl;
+                    country.ImagePublicId = uploadResult.Value.PublicId;
+                }
             }
-            else if (string.IsNullOrEmpty(country.ImageUrl))
+            else
             {
-                country.ImageUrl = "/images/empty.png";
+                country.ImageUrl = countryFromDb.ImageUrl;
+                country.ImagePublicId = countryFromDb.ImagePublicId;
             }
 
             _dbContext.Entry(countryFromDb).State = EntityState.Detached;
@@ -134,7 +148,7 @@ namespace AsiaGuides.Areas.Admin.Controllers
             return Ok();
         }
 
-        private async Task<string?> UploadImageAsync(IFormFile file)
+        private async Task<(string ImageUrl, string PublicId)?> UploadImageAsync(IFormFile file)
         {
             if (file == null || file.Length == 0) return null;
 
@@ -146,9 +160,12 @@ namespace AsiaGuides.Areas.Admin.Controllers
 
             var uploadResult = await _cloudinary.UploadAsync(uploadParams);
 
-            return uploadResult.StatusCode == System.Net.HttpStatusCode.OK
-                ? uploadResult.SecureUrl.ToString()
-                : null;
+            if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                return (uploadResult.SecureUrl.ToString(), uploadResult.PublicId);
+            }
+
+            return null;
         }
     }
 }
