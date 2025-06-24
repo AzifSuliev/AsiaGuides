@@ -27,40 +27,6 @@ namespace AsiaGuides.Areas.Admin.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var account = new Account("dftflczf1", "613875171863164", "uhe28k9WIl8p1YTSc6wlaVRKoPI");
-            var cloudinary = new Cloudinary(account);
-            var messages = new List<string>();
-            List<string> publicIds = new List<string>()
-            {
-                "ngsir8v9lh2ecjg7hfbi",
-                "enxescglqqkvumhshlex",
-                "ihg1pff779lzsmczs40y",
-                "ihg1pff779lzsmczs40y"
-            };
-
-            foreach (var item in publicIds)
-            {
-                try
-                {
-
-                    var result = cloudinary.GetResource(new GetResourceParams(item));
-                    if (result == null || result.SecureUrl == null)
-                    {
-                        messages.Add("File is not found");
-                    }
-                    else
-                    {
-                        messages.Add($"File {result.SecureUrl} exists");
-                    }
-                }
-                catch(Exception ex)
-                {
-                    messages.Add($"Error: {ex.Message}");
-                }
-
-            }
-
-            ViewBag.Message = string.Join("<br>", messages);
             var countries = await _dbContext.Countries.ToListAsync();
             if (!countries.Any())
             {
